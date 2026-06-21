@@ -1,0 +1,19 @@
+auditmind-backend/
+│
+├── src/
+│   ├── agents/
+│   │   ├── master/
+│   │   │   └── index.js              # Master Audit Agent main file
+│   │   ├── consistencyChecker.js     # Consistency Checker Sub-Agent
+│   │   ├── severityNormalization.js  # Severity Normalization Sub-Agent
+│   │   └── reportAssembly.js         # Report Assembly Sub-Agent
+│   │
+│   ├── utils/
+│   │   └── firestore.js              # Firestore connection helper
+│   │
+│   ├── index.js                      # Express entry point
+│   └── routes.js                     # Optional API routes
+│
+├── package.json
+├── Dockerfile
+└── README.md
