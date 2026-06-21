@@ -1,0 +1,82 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tenant {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(255)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  users           User[]
+  materialBatches MaterialBatch[]
+  dataAuditLogs   DataAuditLog[]
+
+  @@map("tenants")
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  tenantId        Int               @map("tenant_id")
+  email           String            @unique @db.VarChar(255)
+  role            String            @default("technician") @db.VarChar(50)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  materialBatches MaterialBatch[]
+  dataAuditLogs   DataAuditLog[]
+
+  @@map("users")
+}
+
+model MaterialBatch {
+  id          Int          @id @default(autoincrement())
+  tenantId    Int          @map("tenant_id")
+  batchCode   String       @unique @map("batch_code") @db.VarChar(100)
+  projectName String?      @map("project_name") @db.VarChar(255)
+  createdBy   Int?         @map("created_by")
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User?        @relation(fields: [createdBy], references: [id])
+  samples     TestSample[]
+
+  @@map("material_batches")
+}
+
+model TestSample {
+  id                 Int            @id @default(autoincrement())
+  batchId            Int            @map("batch_id")
+  sampleLabel        String         @map("sample_label") @db.VarChar(50)
+  dryMassG           Decimal?       @map("dry_mass_g") @db.Decimal(10, 3)
+  wetMassG           Decimal?       @map("wet_mass_g") @db.Decimal(10, 3)
+  waterAbsorptionPct Decimal?       @map("water_absorption_pct") @db.Decimal(5, 2)
+  isVerified         Boolean        @default(false) @map("is_verified")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  batch              MaterialBatch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  dataAuditLogs      DataAuditLog[]
+
+  @@map("test_samples")
+}
+
+model DataAuditLog {
+  id         Int        @id @default(autoincrement())
+  tenantId   Int?       @map("tenant_id")
+  userId     Int?       @map("user_id")
+  sampleId   Int?       @map("sample_id")
+  tableName  String     @map("table_name") @db.VarChar(100)
+  columnName String     @map("column_name") @db.VarChar(100)
+  oldValue   String?    @map("old_value")
+  newValue   String?    @map("new_value")
+  changedAt  DateTime   @default(now()) @map("changed_at")
+
+  tenant     Tenant?    @relation(fields: [tenantId], references: [id])
+  user       User?      @relation(fields: [userId], references: [id])
+  sample     TestSample? @relation(fields: [sampleId], references: [id])
+
+  @@map("data_audit_logs")
+}
